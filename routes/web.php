@@ -50,12 +50,17 @@ Route::middleware(['auth'])->group(function () {
     Route::delete('/admin-users/{user}', [AdminUserController::class, 'destroy'])->name('admin-users.destroy')->middleware('role:Owner');
 
     // Laporan Routes
-    Route::get('/laporan/owner', [LaporanController::class, 'owner'])->name('laporan.owner')->middleware('role:Owner');
-    Route::get('/laporan/owner/export', [LaporanController::class, 'exportOwner'])->name('laporan.owner.export')->middleware('role:Owner');
-    Route::get('/laporan/owner/export-pdf', [LaporanController::class, 'exportOwnerPdf'])->name('laporan.owner.export-pdf')->middleware('role:Owner');
     Route::get('/laporan/admin', [LaporanController::class, 'admin'])->name('laporan.admin')->middleware('can:view-any-laporan');
     Route::get('/laporan/admin/export', [LaporanController::class, 'exportAdmin'])->name('laporan.admin.export')->middleware('can:view-any-laporan');
     Route::get('/laporan/admin/export-pdf', [LaporanController::class, 'exportAdminPdf'])->name('laporan.admin.export-pdf')->middleware('can:view-any-laporan');
+
+    // Laporan Per Bibit (Owner only)
+    Route::get('/laporan/per-bibit', [LaporanController::class, 'perBibit'])->name('laporan.per-bibit')->middleware('role:Owner');
+    Route::get('/laporan/per-bibit/export', [LaporanController::class, 'exportPerBibit'])->name('laporan.per-bibit.export')->middleware('role:Owner');
+
+    // Laporan Per Lokasi (Owner only)
+    Route::get('/laporan/per-lokasi', [LaporanController::class, 'perLokasi'])->name('laporan.per-lokasi')->middleware('role:Owner');
+    Route::get('/laporan/per-lokasi/export', [LaporanController::class, 'exportPerLokasi'])->name('laporan.per-lokasi.export')->middleware('role:Owner');
 
     // API Routes for Filter Cascade (inside auth middleware)
     Route::get('/api/kandang', [KandangController::class, 'apiIndex'])->name('api.kandang');
