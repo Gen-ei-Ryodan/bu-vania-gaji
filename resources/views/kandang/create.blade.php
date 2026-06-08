@@ -1,0 +1,51 @@
+@extends('layouts.app')
+
+@section('title', 'Tambah Kandang')
+
+@section('content')
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h4>Tambah Kandang</h4>
+            </div>
+            <div class="card-body">
+                <form action="{{ route('kandang.store') }}" method="POST">
+                    @csrf
+                    <div class="mb-3">
+                        <label class="form-label">Lokasi *</label>
+                        <select name="lokasi_id" id="lokasi_id" class="tom-select form-select @error('lokasi_id') is-invalid @enderror" required>
+                            <option value="">Pilih Lokasi</option>
+                            @foreach($lokasis as $lokasi)
+                            <option value="{{ $lokasi->id }}" {{ old('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
+                                {{ $lokasi->nama_lokasi }}
+                            </option>
+                            @endforeach
+                        </select>
+                        @error('lokasi_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Nama Kandang *</label>
+                        <input type="text" name="nama_kandang" class="form-control @error('nama_kandang') is-invalid @enderror" 
+                               value="{{ old('nama_kandang') }}" required>
+                        @error('nama_kandang')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">Simpan</button>
+                        <a href="{{ route('kandang.index') }}" class="btn btn-secondary">Batal</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('scripts')
+<script src="{{ asset('js/filter-cascade.js') }}"></script>
+@endpush
+@endsection
+
