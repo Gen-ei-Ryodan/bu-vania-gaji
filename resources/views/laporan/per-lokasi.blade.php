@@ -49,7 +49,25 @@
                     @endforeach
                 </select>
             </div>
-            
+            <div class="col-md-3">
+                <label class="form-label">Nama Pegawai</label>
+                <input type="text" name="nama_pegawai" class="form-control" value="{{ request('nama_pegawai') }}" placeholder="Cari nama...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tanggal Mulai</label>
+                <input type="date" name="start_date" class="form-control" value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tanggal Akhir</label>
+                <input type="date" name="end_date" class="form-control" value="{{ request('end_date', now()->endOfMonth()->format('Y-m-d')) }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                    <a href="{{ route('laporan.per-lokasi') }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </div>
         </form>
     </div>
 </div>

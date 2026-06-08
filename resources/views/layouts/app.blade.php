@@ -93,6 +93,8 @@
                 <span>Laporan per Lokasi</span>
             </a>
             @endrole
+
+            @role('Owner')
             <div class="px-3 py-2 text-uppercase text-muted small mt-3">Role Management</div>
             <a class="nav-link {{ request()->routeIs('admin-users.*') ? 'active' : '' }}" href="{{ route('admin-users.index') }}">
                 <i class="bi bi-person-gear"></i>

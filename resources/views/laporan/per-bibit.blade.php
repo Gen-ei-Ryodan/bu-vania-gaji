@@ -64,7 +64,13 @@
                 <label class="form-label">Nama Pegawai</label>
                 <input type="text" name="nama_pegawai" class="form-control" value="{{ request('nama_pegawai') }}" placeholder="Cari nama...">
             </div>
-            
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-fill">Filter</button>
+                    <a href="{{ route('laporan.per-bibit') }}" class="btn btn-secondary">Reset</a>
+                </div>
+            </div>
         </form>
     </div>
 </div>
@@ -81,7 +87,14 @@
                 Bibit: {{ $filterSummary['bibit'] }}
             </div>
         </div>
-        
+        <h5 class="card-title">
+            @if($report['bibit'])
+                {{ $report['bibit']->jenis_bibit }} - {{ $report['bibit']->kandang->nama_kandang ?? '' }}
+            @else
+                Semua Bibit
+            @endif
+            <small class="text-muted ms-2">Dari: {{ \Carbon\Carbon::parse($report['start_date'])->format('d/m/Y') }}</small>
+        </h5>
         
         <div class="table-responsive">
             <table class="table table-striped">
