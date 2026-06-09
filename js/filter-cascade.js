@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const kandangSelect = document.querySelector(`select[id="${bibitSelectId.replace('bibit_id', 'kandang_id').replace('filter_bibit', 'filter_kandang')}"]`) || 
                              document.querySelector(`select[data-target-bibit="${bibitSelectId}"]`);
                              
-        if (kandangId && kandangSelect && kandangSelect.id !== 'filter_kandang') {
+        if (kandangId && kandangSelect) {
              const kandangTomSelect = tomSelects[kandangSelect.id];
              // Try to find the option object to get stored lokasi_id
              const option = kandangTomSelect.options[kandangId];
@@ -102,29 +102,34 @@ document.addEventListener('DOMContentLoaded', function() {
              const lokasiTomSelect = tomSelects[lokasiSelectId];
 
              if (lokasiTomSelect) {
-                 // If we have the option data with lokasi_id, use it
+                 let lokasiId = null;
+                 
+                 // Get lokasi_id from JS option data
                  if (option && option.lokasi_id) {
-                     const currentLokasi = lokasiTomSelect.getValue();
-                     if (currentLokasi != option.lokasi_id) {
-                         lokasiTomSelect.setValue(option.lokasi_id);
-                     }
+                     lokasiId = option.lokasi_id;
                  } else {
-                     // Fallback: Fetch kandang details to get lokasi_id if not in option data
-                     // This happens if options were pre-loaded from HTML
-                     // We can try to look at the original <option> if it exists
-                     const originalOption = document.querySelector(`#${kandangSelect.id} option[value="${kandangId}"]`);
-                     // If we can't find it easily, we might need an API call, but let's try to infer from loaded kandangs if possible.
-                     // Or just fetch /api/kandang?id=... but we don't have that route handy for single item details except via list.
-                     // Actually, usually cascading goes downwards. Reverse is tricky without data.
-                     // But wait, the user says "sebaliknya jika di pilih kandang".
-                     // If the Kandang options are loaded via AJAX (updateKandangByLokasi), we have the data.
-                     // If they are loaded via HTML (initial load), we might not have 'lokasi_id' in the JS option object unless we put it there.
-                     
-                     // Let's assume for now that if we select a Kandang, we want to ensure the Lokasi is correct.
-                     // If the user selected Lokasi first, it's already correct.
-                     // If the user selects Kandang first (is that possible? usually Kandang dropdown is empty until Lokasi is selected, unless we load ALL kandangs initially).
-                     // In the filter form, "Semua Kandang" might list ALL kandangs if no Lokasi is selected.
-                     // If so, selecting one should set Lokasi.
+                     // Fallback: get from original HTML option data-lokasi attribute
+                     const htmlOption = kandangSelect.querySelector(`option[value="${kandangId}"]`);
+                     if (!htmlOption) {
+                         // Try native select
+                         const nativeSelect = document.querySelector(`select#${kandangSelect.id}`);
+                         if (nativeSelect) {
+                             const nativeOption = nativeSelect.querySelector(`option[value="${kandangId}"]`);
+                             if (nativeOption) {
+                                 lokasiId = nativeOption.getAttribute('data-lokasi');
+                             }
+                         }
+                     } else {
+                         lokasiId = htmlOption.getAttribute('data-lokasi');
+                     }
+                 }
+                 
+                 if (lokasiId) {
+                     isAutoFilling = true;
+                     if (lokasiTomSelect.getValue() != lokasiId) {
+                         lokasiTomSelect.setValue(lokasiId);
+                     }
+                     setTimeout(() => { isAutoFilling = false; }, 150);
                  }
              }
         }
@@ -153,7 +158,7 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        fetch(`/api/bibit?kandang_id=${kandangId}&status=aktif`)
+        fetch(`/api/bibit?kandang_id=${kandangId}`)
             .then(response => {
                 if (!response.ok) {
                     throw new Error('Network response was not ok');
@@ -163,9 +168,13 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(data => {
                 if (data.length > 0) {
                     data.forEach(bibit => {
+                        let text = `${bibit.jenis_bibit} - ${bibit.kandang?.nama_kandang || ''}`;
+                        if (bibit.status !== 'aktif') {
+                            text += ' [Selesai]';
+                        }
                         tomSelects[bibitSelectId].addOption({
                             value: bibit.id,
-                            text: `${bibit.jenis_bibit} - ${bibit.kandang?.nama_kandang || ''}`
+                            text: text
                         });
                     });
                     tomSelects[bibitSelectId].refreshOptions(false);
@@ -179,17 +188,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         tomSelects[bibitSelectId].setValue(data[0].id);
                     }
                 } else {
-                    // If no bibit found, show all bibits from original options (for filter)
+                    // No bibit found — keep only "Semua Bibit" option for filter
                     if (bibitSelectId === 'filter_bibit') {
-                        const options = bibitSelect.querySelectorAll('option');
-                        options.forEach(option => {
-                            if (option.value) {
-                                tomSelects[bibitSelectId].addOption({
-                                    value: option.value,
-                                    text: option.textContent
-                                });
-                            }
-                        });
                         tomSelects[bibitSelectId].refreshOptions(false);
                     }
                 }
