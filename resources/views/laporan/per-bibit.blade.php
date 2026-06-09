@@ -40,7 +40,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Kandang</label>
-                <select name="kandang_id" id="filter_kandang" class="tom-select form-select">
+                <select name="kandang_id" id="filter_kandang" class="tom-select form-select" data-target-bibit="filter_bibit">
                     <option value="">Semua Kandang</option>
                     @foreach($kandangs as $kandang)
                     <option value="{{ $kandang->id }}" data-lokasi="{{ $kandang->lokasi_id }}" {{ request('kandang_id') == $kandang->id ? 'selected' : '' }}>
@@ -55,7 +55,7 @@
                     <option value="">Semua Bibit</option>
                     @foreach($bibits as $bibit)
                     <option value="{{ $bibit->id }}" data-kandang="{{ $bibit->kandang_id }}" {{ request('bibit_id') == $bibit->id ? 'selected' : '' }}>
-                        {{ $bibit->jenis_bibit }} - {{ $bibit->kandang->nama_kandang }}
+                        {{ $bibit->jenis_bibit }} - {{ $bibit->kandang->nama_kandang }} {{ $bibit->status != 'aktif' ? '[Selesai]' : '' }}
                     </option>
                     @endforeach
                 </select>
@@ -90,6 +90,7 @@
         <h5 class="card-title">
             @if($report['bibit'])
                 {{ $report['bibit']->jenis_bibit }} - {{ $report['bibit']->kandang->nama_kandang ?? '' }}
+                <span class="badge bg-{{ $report['bibit']->status != 'aktif' ? 'secondary' : 'success' }} ms-1">{{ $report['bibit']->status != 'aktif' ? 'Selesai' : 'Aktif' }}</span>
             @else
                 Semua Bibit
             @endif

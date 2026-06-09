@@ -96,7 +96,7 @@ class LaporanController extends Controller
         $jabatans = Jabatan::all();
         $lokasis = Lokasi::all();
         $kandangs = Kandang::all();
-        $bibits = Bibit::with('kandang')->latest('tanggal_masuk')->get();
+        $bibits = Bibit::with('kandang')->orderBy('status')->latest('tanggal_masuk')->get();
         $filterSummary = $this->buildFilterSummary($filters, $report);
 
         return view('laporan.admin', compact('report', 'jabatans', 'lokasis', 'kandangs', 'bibits', 'filterSummary'));
@@ -315,7 +315,7 @@ class LaporanController extends Controller
         $jabatans = Jabatan::all();
         $lokasis = Lokasi::all();
         $kandangs = Kandang::all();
-        $bibits = Bibit::with('kandang')->latest('tanggal_masuk')->get();
+        $bibits = Bibit::with('kandang')->orderBy('status')->latest('tanggal_masuk')->get();
         $filterSummary = $this->buildPerBibitFilterSummary($filters, $report);
 
         return view('laporan.per-bibit', compact('report', 'jabatans', 'lokasis', 'kandangs', 'bibits', 'filterSummary'));
