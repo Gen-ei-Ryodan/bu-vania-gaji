@@ -1,23 +1,21 @@
 @extends('layouts.app')
 
-@section('title', 'Laporan Owner')
+@section('title', 'Laporan Gaji per Bibit')
 
 @section('content')
-<div class="page-header d-flex justify-content-between align-items-center mb-4">
-    <h1 class="mb-0">Laporan Owner</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1>Laporan Gaji per Bibit</h1>
     <div class="d-flex gap-2">
-        <a href="{{ route('laporan.owner.export', request()->all()) }}" class="btn btn-success page-header-action">
+        <a href="{{ route('laporan.per-bibit.export', request()->all()) }}" class="btn btn-success">
             <i class="bi bi-download"></i> Export XLSX
         </a>
-        <a href="{{ route('laporan.owner.export-pdf', request()->all()) }}" class="btn btn-danger page-header-action">
-            <i class="bi bi-file-earmark-pdf"></i> Export PDF
-        </a>
+        
     </div>
 </div>
 
 <div class="card mb-4">
     <div class="card-body">
-        <form method="GET" action="{{ route('laporan.owner') }}" class="row g-3">
+        <form method="GET" action="{{ route('laporan.per-bibit') }}" class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">Jabatan</label>
                 <select name="jabatan_id" class="tom-select form-select">
@@ -31,7 +29,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Lokasi</label>
-                <select name="lokasi_id" id="filter_lokasi" class="tom-select form-select" data-target-kandang="filter_kandang">
+                <select name="lokasi_id" id="filter_lokasi" class="tom-select form-select" data-target-kandang="filter_kandang" data-target-bibit="filter_bibit">
                     <option value="">Semua Lokasi</option>
                     @foreach($lokasis as $lokasi)
                     <option value="{{ $lokasi->id }}" {{ request('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
@@ -67,18 +65,10 @@
                 <input type="text" name="nama_pegawai" class="form-control" value="{{ request('nama_pegawai') }}" placeholder="Cari nama...">
             </div>
             <div class="col-md-3">
-                <label class="form-label">Tanggal Mulai</label>
-                <input type="date" name="start_date" class="form-control" value="{{ request('start_date', now()->startOfMonth()->format('Y-m-d')) }}">
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Tanggal Akhir</label>
-                <input type="date" name="end_date" class="form-control" value="{{ request('end_date', now()->endOfMonth()->format('Y-m-d')) }}">
-            </div>
-            <div class="col-md-3">
                 <label class="form-label">&nbsp;</label>
-                <div class="filter-actions d-flex gap-2">
+                <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill">Filter</button>
-                    <a href="{{ route('laporan.owner') }}" class="btn btn-secondary flex-fill">Reset</a>
+                    <a href="{{ route('laporan.per-bibit') }}" class="btn btn-secondary">Reset</a>
                 </div>
             </div>
         </form>
@@ -97,7 +87,14 @@
                 Bibit: {{ $filterSummary['bibit'] }}
             </div>
         </div>
-        <h5 class="card-title">Periode: {{ \Carbon\Carbon::parse($report['start_date'])->format('d/m/y') }} s/d {{ \Carbon\Carbon::parse($report['end_date'])->format('d/m/y') }}</h5>
+        <h5 class="card-title">
+            @if($report['bibit'])
+                {{ $report['bibit']->jenis_bibit }} - {{ $report['bibit']->kandang->nama_kandang ?? '' }}
+            @else
+                Semua Bibit
+            @endif
+            <small class="text-muted ms-2">Dari: {{ \Carbon\Carbon::parse($report['start_date'])->format('d/m/Y') }}</small>
+        </h5>
         
         <div class="table-responsive">
             <table class="table table-striped">
@@ -112,7 +109,13 @@
                     </tr>
                 </thead>
                 <tbody>
+                    @php
+                        $grandTotalBiaya = 0;
+                    @endphp
                     @forelse($report['data'] as $item)
+                    @php
+                        $grandTotalBiaya += $item['total_gaji'];
+                    @endphp
                     <tr>
                         <td>{{ $item['nama'] }}</td>
                         <td>{{ $item['jabatan'] }}</td>
@@ -128,9 +131,9 @@
                     @endforelse
                 </tbody>
                 <tfoot>
-                    <tr class="table-primary">
-                        <th colspan="5">Grand Total</th>
-                        <th>Rp {{ number_format($report['total_biaya'], 0, ',', '.') }}</th>
+                    <tr class="fw-bold table-secondary">
+                        <td colspan="5" class="text-end">Grand Total</td>
+                        <td>Rp {{ number_format($grandTotalBiaya, 0, ',', '.') }}</td>
                     </tr>
                 </tfoot>
             </table>

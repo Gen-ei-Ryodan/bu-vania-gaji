@@ -77,17 +77,22 @@
             <div class="px-3 py-2 text-uppercase text-muted small mt-3">Laporan</div>
             
             @can('view-any-laporan')
-            @role('Owner')
-            <a class="nav-link {{ request()->routeIs('laporan.owner') ? 'active' : '' }}" href="{{ route('laporan.owner') }}">
-                <i class="bi bi-file-earmark-text"></i>
-                <span>Laporan Owner</span>
-            </a>
-            @endrole
             <a class="nav-link {{ request()->routeIs('laporan.admin') ? 'active' : '' }}" href="{{ route('laporan.admin') }}">
                 <i class="bi bi-file-earmark-bar-graph"></i>
                 <span>Laporan Admin</span>
             </a>
             @endcan
+
+            @role('Owner')
+            <a class="nav-link {{ request()->routeIs('laporan.per-bibit') ? 'active' : '' }}" href="{{ route('laporan.per-bibit') }}">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Laporan per Bibit</span>
+            </a>
+            <a class="nav-link {{ request()->routeIs('laporan.per-lokasi') ? 'active' : '' }}" href="{{ route('laporan.per-lokasi') }}">
+                <i class="bi bi-geo-alt"></i>
+                <span>Laporan per Lokasi</span>
+            </a>
+            @endrole
 
             @role('Owner')
             <div class="px-3 py-2 text-uppercase text-muted small mt-3">Role Management</div>
