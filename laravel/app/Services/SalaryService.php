@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Absensi;
+use App\Models\Bibit;
 use App\Models\Gaji;
 use App\Models\Karyawan;
 use Carbon\Carbon;
@@ -195,6 +196,131 @@ class SalaryService
                 // Only add if there is data or if we want to show empty rows (but with split logic, empty rows might be confusing if duplicated)
                 // However, calculateSalaryForPeriod returns a single empty row if no absensi.
                 // We should keep it.
+                $results[] = $result;
+            }
+        }
+
+        return [
+            'data' => $results,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'total_biaya' => collect($results)->sum('total_gaji'),
+        ];
+    }
+
+    /**
+     * Calculate salary report per bibit
+     * Shows all salary data from when the bibit became active
+     */
+    public function calculatePerBibitReport(array $filters = []): array
+    {
+        $bibit = null;
+
+        if (! empty($filters['bibit_id'])) {
+            $bibit = Bibit::find($filters['bibit_id']);
+            $startDate = $bibit ? Carbon::parse($bibit->tanggal_masuk) : now()->startOfMonth();
+        } else {
+            $startDate = now()->startOfMonth();
+        }
+
+        $endDate = now();
+
+        $query = Karyawan::query()->with(['jabatan']);
+
+        $hasAbsensiFilters = ! empty($filters['lokasi_id']) || ! empty($filters['kandang_id']) || ! empty($filters['bibit_id']);
+        if ($hasAbsensiFilters) {
+            $query->whereHas('absensis', function ($q) use ($filters, $startDate, $endDate) {
+                $q->whereBetween('tanggal', [$startDate, $endDate]);
+                if (! empty($filters['lokasi_id'])) {
+                    $q->where('lokasi_id', $filters['lokasi_id']);
+                }
+                if (! empty($filters['kandang_id'])) {
+                    $q->where('kandang_id', $filters['kandang_id']);
+                }
+                if (! empty($filters['bibit_id'])) {
+                    $q->where('bibit_id', $filters['bibit_id']);
+                }
+            });
+        }
+
+        if (! empty($filters['jabatan_id'])) {
+            $query->where('jabatan_id', $filters['jabatan_id']);
+        }
+
+        if (! empty($filters['nama_pegawai'])) {
+            $query->where('nama', 'like', '%' . $filters['nama_pegawai'] . '%');
+        }
+
+        $karyawans = $query->get();
+        $results = [];
+
+        foreach ($karyawans as $karyawan) {
+            $employeeResults = $this->calculateSalaryForPeriod($karyawan, $startDate, $endDate, $filters);
+            foreach ($employeeResults as $result) {
+                if (! empty($filters['bibit_id']) && $result['total_gaji'] == 0) {
+                    continue;
+                }
+                $results[] = $result;
+            }
+        }
+
+        return [
+            'data' => $results,
+            'start_date' => $startDate->format('Y-m-d'),
+            'end_date' => $endDate->format('Y-m-d'),
+            'total_biaya' => collect($results)->sum('total_gaji'),
+            'bibit' => $bibit,
+        ];
+    }
+
+    /**
+     * Calculate salary report per lokasi
+     * Groups by location without bibit filter, with optional date range
+     */
+    public function calculatePerLokasiReport(array $filters = []): array
+    {
+        $startDate = ! empty($filters['start_date'])
+            ? Carbon::parse($filters['start_date'])
+            : now()->startOfMonth();
+
+        $endDate = ! empty($filters['end_date'])
+            ? Carbon::parse($filters['end_date'])
+            : now()->endOfMonth();
+
+        $query = Karyawan::query()->with(['jabatan']);
+
+        $hasAbsensiFilters = ! empty($filters['lokasi_id']) || ! empty($filters['kandang_id']);
+        if ($hasAbsensiFilters) {
+            $query->whereHas('absensis', function ($q) use ($filters, $startDate, $endDate) {
+                $q->whereBetween('tanggal', [$startDate, $endDate]);
+                if (! empty($filters['lokasi_id'])) {
+                    $q->where('lokasi_id', $filters['lokasi_id']);
+                }
+                if (! empty($filters['kandang_id'])) {
+                    $q->where('kandang_id', $filters['kandang_id']);
+                }
+            });
+        }
+
+        if (! empty($filters['jabatan_id'])) {
+            $query->where('jabatan_id', $filters['jabatan_id']);
+        }
+
+        if (! empty($filters['nama_pegawai'])) {
+            $query->where('nama', 'like', '%' . $filters['nama_pegawai'] . '%');
+        }
+
+        $karyawans = $query->get();
+        $results = [];
+
+        foreach ($karyawans as $karyawan) {
+            $lokasiFilters = $filters;
+            unset($lokasiFilters['bibit_id']);
+            $employeeResults = $this->calculateSalaryForPeriod($karyawan, $startDate, $endDate, $lokasiFilters);
+            foreach ($employeeResults as $result) {
+                if ($result['total_hari_full'] == 0 && $result['total_hari_half'] == 0) {
+                    continue;
+                }
                 $results[] = $result;
             }
         }

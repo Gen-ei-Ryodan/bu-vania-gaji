@@ -79,28 +79,6 @@ class LaporanController extends Controller
     }
 
     /**
-     * Display owner report
-     */
-    public function owner(Request $request)
-    {
-        if (! auth()->user()->hasRole('Owner')) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'nama_pegawai', 'lokasi_id', 'kandang_id', 'bibit_id']);
-
-        $report = $this->salaryService->calculateSalaryReport($filters);
-
-        $jabatans = Jabatan::all();
-        $lokasis = Lokasi::all();
-        $kandangs = Kandang::all();
-        $bibits = Bibit::with('kandang')->latest('tanggal_masuk')->get();
-        $filterSummary = $this->buildFilterSummary($filters, $report);
-
-        return view('laporan.owner', compact('report', 'jabatans', 'lokasis', 'kandangs', 'bibits', 'filterSummary'));
-    }
-
-    /**
      * Display admin report
      */
     public function admin(Request $request)
@@ -123,173 +101,6 @@ class LaporanController extends Controller
 
         return view('laporan.admin', compact('report', 'jabatans', 'lokasis', 'kandangs', 'bibits', 'filterSummary'));
     }
-
-    /**
-     * Export owner report to XLSX
-     */
-    public function exportOwner(Request $request)
-    {
-        if (! auth()->user()->hasRole('Owner')) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'nama_pegawai', 'lokasi_id', 'kandang_id', 'bibit_id']);
-
-        $report = $this->salaryService->calculateSalaryReport($filters);
-        $filterSummary = $this->buildFilterSummary($filters, $report);
-
-        // Create new Spreadsheet
-        $spreadsheet = new Spreadsheet;
-        $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle('Laporan Owner');
-
-        // Header style
-        $headerStyle = [
-            'font' => [
-                'bold' => true,
-                'color' => ['rgb' => 'FFFFFF'],
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => '4472C4'],
-            ],
-            'alignment' => [
-                'horizontal' => Alignment::HORIZONTAL_CENTER,
-                'vertical' => Alignment::VERTICAL_CENTER,
-            ],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
-            ],
-        ];
-
-        // Title style
-        $titleStyle = [
-            'font' => [
-                'bold' => true,
-                'size' => 14,
-            ],
-        ];
-
-        // Summary style
-        $summaryStyle = [
-            'font' => [
-                'bold' => true,
-            ],
-        ];
-
-        // Total style
-        $totalStyle = [
-            'font' => [
-                'bold' => true,
-            ],
-            'fill' => [
-                'fillType' => Fill::FILL_SOLID,
-                'startColor' => ['rgb' => 'E7E6E6'],
-            ],
-            'borders' => [
-                'allBorders' => [
-                    'borderStyle' => Border::BORDER_THIN,
-                ],
-            ],
-        ];
-
-        // Write summary
-        $row = 1;
-        $sheet->setCellValue('A'.$row, 'Jabatan:');
-        $sheet->setCellValue('B'.$row, $filterSummary['jabatan']);
-        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, 'Nama Pegawai:');
-        $sheet->setCellValue('B'.$row, $filterSummary['nama_pegawai']);
-        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, 'Lokasi:');
-        $sheet->setCellValue('B'.$row, $filterSummary['lokasi']);
-        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, 'Kandang:');
-        $sheet->setCellValue('B'.$row, $filterSummary['kandang']);
-        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, 'Bibit:');
-        $sheet->setCellValue('B'.$row, $filterSummary['bibit']);
-        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
-        $row++;
-
-        $sheet->setCellValue('A'.$row, 'Rentang Tanggal:');
-        $sheet->setCellValue('B'.$row, $filterSummary['rentang_tanggal']);
-        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
-        $row++;
-
-        // Empty row before headers
-        $row++;
-
-        // Write headers
-        $headers = ['Nama', 'Jabatan', 'Gaji Pokok', 'Total Hari Full', 'Total Hari Half', 'Total Biaya'];
-        $headerRow = $row;
-        $column = 'A';
-        foreach ($headers as $header) {
-            $sheet->setCellValue($column.$headerRow, $header);
-            $sheet->getStyle($column.$headerRow)->applyFromArray($headerStyle);
-            $column++;
-        }
-
-        // Write data
-        $row = $headerRow + 1;
-        foreach ($report['data'] as $item) {
-            $sheet->setCellValue('A'.$row, $item['nama']);
-            $sheet->setCellValue('B'.$row, $item['jabatan']);
-            $sheet->setCellValue('C'.$row, number_format($item['gaji_pokok'], 0, ',', '.'));
-            $sheet->setCellValue('D'.$row, $item['total_hari_full']);
-            $sheet->setCellValue('E'.$row, $item['total_hari_half']);
-            $sheet->setCellValue('F'.$row, number_format($item['total_gaji'], 0, ',', '.'));
-
-            // Add borders
-            $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
-                'borders' => [
-                    'allBorders' => [
-                        'borderStyle' => Border::BORDER_THIN,
-                    ],
-                ],
-            ]);
-
-            $row++;
-        }
-
-        // Write grand total
-        $sheet->setCellValue('A'.$row, 'Grand Total');
-        $sheet->setCellValue('F'.$row, number_format($report['total_biaya'], 0, ',', '.'));
-        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray($totalStyle);
-        $sheet->mergeCells('A'.$row.':E'.$row);
-        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
-
-        // Auto size columns
-        foreach (range('A', 'F') as $col) {
-            $sheet->getColumnDimension($col)->setAutoSize(true);
-        }
-
-        // Set row heights
-        $sheet->getRowDimension($headerRow)->setRowHeight(25);
-
-        // Create writer
-        $filename = 'laporan_owner_'.date('Y-m-d_His').'.xlsx';
-
-        // Save to temporary file
-        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
-        $writer = new Xlsx($spreadsheet);
-        $writer->save($tempFile);
-
-        return response()->download($tempFile, $filename, [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        ])->deleteFileAfterSend(true);
-    }
-
     /**
      * Export admin report to XLSX
      */
@@ -468,24 +279,6 @@ class LaporanController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
-    public function exportOwnerPdf(Request $request)
-    {
-        if (! auth()->user()->hasRole('Owner')) {
-            abort(403, 'Unauthorized access.');
-        }
-
-        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'nama_pegawai', 'lokasi_id', 'kandang_id', 'bibit_id']);
-        $report = $this->salaryService->calculateSalaryReport($filters);
-        $filterSummary = $this->buildFilterSummary($filters, $report);
-
-        $pdf = Pdf::loadView('laporan.owner-pdf', [
-            'report' => $report,
-            'filterSummary' => $filterSummary,
-        ])->setPaper('a4', 'landscape');
-
-        return $pdf->download('laporan_owner_'.date('Y-m-d_His').'.pdf');
-    }
-
     public function exportAdminPdf(Request $request)
     {
         if (! auth()->user()->can('view-any-laporan')) {
@@ -503,5 +296,303 @@ class LaporanController extends Controller
         ])->setPaper('a4', 'landscape');
 
         return $pdf->download('laporan_admin_'.date('Y-m-d_His').'.pdf');
+    }
+
+    // =========================
+    // LAPORAN PER BIBIT
+    // =========================
+
+    public function perBibit(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $filters = $request->only(['jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
+        $report = $this->salaryService->calculatePerBibitReport($filters);
+        $this->maskGajiPokokUntukAdmin($report);
+
+        $jabatans = Jabatan::all();
+        $lokasis = Lokasi::all();
+        $kandangs = Kandang::all();
+        $bibits = Bibit::with('kandang')->latest('tanggal_masuk')->get();
+        $filterSummary = $this->buildPerBibitFilterSummary($filters, $report);
+
+        return view('laporan.per-bibit', compact('report', 'jabatans', 'lokasis', 'kandangs', 'bibits', 'filterSummary'));
+    }
+
+    public function exportPerBibit(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $filters = $request->only(['jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
+        $report = $this->salaryService->calculatePerBibitReport($filters);
+        $this->maskGajiPokokUntukAdmin($report);
+        $filterSummary = $this->buildPerBibitFilterSummary($filters, $report);
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan Per Bibit');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ];
+        $summaryStyle = ['font' => ['bold' => true]];
+        $totalStyle = [
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E7E6E6']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ];
+
+        $row = 1;
+        $sheet->setCellValue('A'.$row, 'Jabatan:');
+        $sheet->setCellValue('B'.$row, $filterSummary['jabatan']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Nama Pegawai:');
+        $sheet->setCellValue('B'.$row, $filterSummary['nama_pegawai']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Lokasi:');
+        $sheet->setCellValue('B'.$row, $filterSummary['lokasi']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Kandang:');
+        $sheet->setCellValue('B'.$row, $filterSummary['kandang']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Bibit:');
+        $sheet->setCellValue('B'.$row, $filterSummary['bibit']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Dari Tanggal:');
+        $sheet->setCellValue('B'.$row, $filterSummary['tanggal_mulai']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $row++;
+
+        $headers = ['Nama', 'Jabatan', 'Gaji Pokok', 'Total Hari Full', 'Total Hari Half', 'Total Biaya'];
+        $headerRow = $row;
+        $column = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($column.$headerRow, $header);
+            $sheet->getStyle($column.$headerRow)->applyFromArray($headerStyle);
+            $column++;
+        }
+
+        $row = $headerRow + 1;
+        foreach ($report['data'] as $item) {
+            $sheet->setCellValue('A'.$row, $item['nama']);
+            $sheet->setCellValue('B'.$row, $item['jabatan']);
+            $sheet->setCellValue('C'.$row, number_format($item['gaji_pokok'], 0, ',', '.'));
+            $sheet->setCellValue('D'.$row, $item['total_hari_full']);
+            $sheet->setCellValue('E'.$row, $item['total_hari_half']);
+            $sheet->setCellValue('F'.$row, number_format($item['total_gaji'], 0, ',', '.'));
+            $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+            $row++;
+        }
+
+        $sheet->setCellValue('A'.$row, 'Grand Total');
+        $sheet->setCellValue('F'.$row, number_format($report['total_biaya'], 0, ',', '.'));
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray($totalStyle);
+        $sheet->mergeCells('A'.$row.':E'.$row);
+        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        $sheet->getRowDimension($headerRow)->setRowHeight(25);
+
+        $filename = 'laporan_per_bibit_'.date('Y-m-d_His').'.xlsx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    // ===========================
+    // LAPORAN PER LOKASI
+    // ===========================
+
+    public function perLokasi(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'lokasi_id', 'kandang_id', 'nama_pegawai']);
+        $report = $this->salaryService->calculatePerLokasiReport($filters);
+        $this->maskGajiPokokUntukAdmin($report);
+
+        $jabatans = Jabatan::all();
+        $lokasis = Lokasi::all();
+        $kandangs = Kandang::all();
+        $filterSummary = $this->buildPerLokasiFilterSummary($filters, $report);
+
+        return view('laporan.per-lokasi', compact('report', 'jabatans', 'lokasis', 'kandangs', 'filterSummary'));
+    }
+
+    public function exportPerLokasi(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'lokasi_id', 'kandang_id', 'nama_pegawai']);
+        $report = $this->salaryService->calculatePerLokasiReport($filters);
+        $this->maskGajiPokokUntukAdmin($report);
+        $filterSummary = $this->buildPerLokasiFilterSummary($filters, $report);
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Laporan Per Lokasi');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ];
+        $summaryStyle = ['font' => ['bold' => true]];
+        $totalStyle = [
+            'font' => ['bold' => true],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => 'E7E6E6']],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ];
+
+        $row = 1;
+        $sheet->setCellValue('A'.$row, 'Jabatan:');
+        $sheet->setCellValue('B'.$row, $filterSummary['jabatan']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Nama Pegawai:');
+        $sheet->setCellValue('B'.$row, $filterSummary['nama_pegawai']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Lokasi:');
+        $sheet->setCellValue('B'.$row, $filterSummary['lokasi']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Kandang:');
+        $sheet->setCellValue('B'.$row, $filterSummary['kandang']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Rentang Tanggal:');
+        $sheet->setCellValue('B'.$row, $filterSummary['rentang_tanggal']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $row++;
+
+        $headers = ['Nama', 'Jabatan', 'Gaji Pokok', 'Total Hari Full', 'Total Hari Half', 'Total Biaya'];
+        $headerRow = $row;
+        $column = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($column.$headerRow, $header);
+            $sheet->getStyle($column.$headerRow)->applyFromArray($headerStyle);
+            $column++;
+        }
+
+        $row = $headerRow + 1;
+        foreach ($report['data'] as $item) {
+            $sheet->setCellValue('A'.$row, $item['nama']);
+            $sheet->setCellValue('B'.$row, $item['jabatan']);
+            $sheet->setCellValue('C'.$row, number_format($item['gaji_pokok'], 0, ',', '.'));
+            $sheet->setCellValue('D'.$row, $item['total_hari_full']);
+            $sheet->setCellValue('E'.$row, $item['total_hari_half']);
+            $sheet->setCellValue('F'.$row, number_format($item['total_gaji'], 0, ',', '.'));
+            $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+            $row++;
+        }
+
+        $sheet->setCellValue('A'.$row, 'Grand Total');
+        $sheet->setCellValue('F'.$row, number_format($report['total_biaya'], 0, ',', '.'));
+        $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray($totalStyle);
+        $sheet->mergeCells('A'.$row.':E'.$row);
+        $sheet->getStyle('A'.$row)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_RIGHT);
+
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        $sheet->getRowDimension($headerRow)->setRowHeight(25);
+
+        $filename = 'laporan_per_lokasi_'.date('Y-m-d_His').'.xlsx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    // ===================================
+    // FILTER SUMMARY BUILDERS
+    // ===================================
+
+    private function buildPerBibitFilterSummary(array $filters, array $report): array
+    {
+        $jabatan = Jabatan::find($filters['jabatan_id'] ?? 0);
+        $jabatanName = $jabatan ? $jabatan->nama_jabatan : 'Semua Jabatan';
+        $namaPegawai = ! empty($filters['nama_pegawai']) ? $filters['nama_pegawai'] : 'Semua Pegawai';
+
+        $lokasi = ! empty($filters['lokasi_id']) ? Lokasi::find($filters['lokasi_id']) : null;
+        $lokasiName = $lokasi ? $lokasi->nama_lokasi : 'Semua Lokasi';
+
+        $kandang = ! empty($filters['kandang_id']) ? Kandang::find($filters['kandang_id']) : null;
+        $kandangName = $kandang ? $kandang->nama_kandang : 'Semua Kandang';
+
+        $bibitName = 'Semua Bibit';
+        if (! empty($report['bibit'])) {
+            $bibitName = $report['bibit']->jenis_bibit . ' - ' . $report['bibit']->kandang?->nama_kandang;
+        } elseif (! empty($filters['bibit_id'])) {
+            $bibit = Bibit::with('kandang')->find($filters['bibit_id']);
+            $bibitName = $bibit ? ($bibit->jenis_bibit . ' - ' . $bibit->kandang?->nama_kandang) : $bibitName;
+        }
+
+        $tanggalMulai = date('d/m/Y', strtotime($report['start_date']));
+
+        return [
+            'jabatan' => $jabatanName,
+            'nama_pegawai' => $namaPegawai,
+            'lokasi' => $lokasiName,
+            'kandang' => $kandangName,
+            'bibit' => $bibitName,
+            'tanggal_mulai' => $tanggalMulai,
+        ];
+    }
+
+    private function buildPerLokasiFilterSummary(array $filters, array $report): array
+    {
+        $jabatan = Jabatan::find($filters['jabatan_id'] ?? 0);
+        $jabatanName = $jabatan ? $jabatan->nama_jabatan : 'Semua Jabatan';
+        $namaPegawai = ! empty($filters['nama_pegawai']) ? $filters['nama_pegawai'] : 'Semua Pegawai';
+
+        $lokasi = ! empty($filters['lokasi_id']) ? Lokasi::find($filters['lokasi_id']) : null;
+        $lokasiName = $lokasi ? $lokasi->nama_lokasi : 'Semua Lokasi';
+
+        $kandang = ! empty($filters['kandang_id']) ? Kandang::find($filters['kandang_id']) : null;
+        $kandangName = $kandang ? $kandang->nama_kandang : 'Semua Kandang';
+
+        $rentangTanggal = date('d/m/Y', strtotime($report['start_date'])) . ' s/d ' . date('d/m/Y', strtotime($report['end_date']));
+
+        return [
+            'jabatan' => $jabatanName,
+            'nama_pegawai' => $namaPegawai,
+            'lokasi' => $lokasiName,
+            'kandang' => $kandangName,
+            'rentang_tanggal' => $rentangTanggal,
+        ];
     }
 }
