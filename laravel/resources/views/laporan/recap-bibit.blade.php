@@ -5,6 +5,14 @@
 @section('content')
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1>Recap Bibit</h1>
+    <div class="d-flex gap-2">
+        <a href="{{ route('laporan.recap-bibit.export', request()->all()) }}" class="btn btn-success">
+            <i class="bi bi-download"></i> Export XLSX
+        </a>
+        <a href="{{ route('laporan.recap-bibit.export-pdf', request()->all()) }}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
+    </div>
 </div>
 
 <div class="card mb-4">

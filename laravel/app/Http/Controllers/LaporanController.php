@@ -420,6 +420,25 @@ class LaporanController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
+    public function exportPerBibitPdf(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $filters = $request->only(['jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
+        $report = $this->salaryService->calculatePerBibitReport($filters);
+        $this->maskGajiPokokUntukAdmin($report);
+        $filterSummary = $this->buildPerBibitFilterSummary($filters, $report);
+
+        $pdf = Pdf::loadView('laporan.per-bibit-pdf', [
+            'report' => $report,
+            'filterSummary' => $filterSummary,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('laporan_per_bibit_'.date('Y-m-d_His').'.pdf');
+    }
+
     // ===========================
     // LAPORAN PER LOKASI
     // ===========================
@@ -537,6 +556,25 @@ class LaporanController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
+    public function exportPerLokasiPdf(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'lokasi_id', 'kandang_id', 'nama_pegawai']);
+        $report = $this->salaryService->calculatePerLokasiReport($filters);
+        $this->maskGajiPokokUntukAdmin($report);
+        $filterSummary = $this->buildPerLokasiFilterSummary($filters, $report);
+
+        $pdf = Pdf::loadView('laporan.per-lokasi-pdf', [
+            'report' => $report,
+            'filterSummary' => $filterSummary,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('laporan_per_lokasi_'.date('Y-m-d_His').'.pdf');
+    }
+
     // =========================
     // RECAP BIBIT
     // =========================
@@ -585,6 +623,153 @@ class LaporanController extends Controller
         ];
 
         return view('laporan.recap-bibit', compact('bibits', 'lokasis', 'kandangs', 'jenisBibits', 'filterSummary'));
+    }
+
+    public function exportRecapBibit(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $query = Bibit::with(['lokasi', 'kandang']);
+
+        if ($request->filled('lokasi_id')) {
+            $query->where('lokasi_id', $request->lokasi_id);
+        }
+        if ($request->filled('kandang_id')) {
+            $query->where('kandang_id', $request->kandang_id);
+        }
+        if ($request->filled('jenis_bibit')) {
+            $query->where('jenis_bibit', $request->jenis_bibit);
+        }
+        if ($request->filled('tanggal_masuk_start')) {
+            $query->where('tanggal_masuk', '>=', $request->tanggal_masuk_start);
+        }
+        if ($request->filled('tanggal_masuk_end')) {
+            $query->where('tanggal_masuk', '<=', $request->tanggal_masuk_end);
+        }
+
+        $bibits = $query->orderByDesc('tanggal_masuk')->get();
+
+        $filterSummary = [
+            'lokasi' => $request->filled('lokasi_id') ? Lokasi::find($request->lokasi_id)->nama_lokasi : 'Semua Lokasi',
+            'kandang' => $request->filled('kandang_id') ? Kandang::find($request->kandang_id)->nama_kandang : 'Semua Kandang',
+            'jenis_bibit' => $request->filled('jenis_bibit') ? $request->jenis_bibit : 'Semua Jenis',
+            'tanggal_masuk' => ($request->filled('tanggal_masuk_start') || $request->filled('tanggal_masuk_end'))
+                ? ($request->tanggal_masuk_start ?? '...') . ' s/d ' . ($request->tanggal_masuk_end ?? '...')
+                : 'Semua Tanggal',
+        ];
+
+        $spreadsheet = new Spreadsheet;
+        $sheet = $spreadsheet->getActiveSheet();
+        $sheet->setTitle('Recap Bibit');
+
+        $headerStyle = [
+            'font' => ['bold' => true, 'color' => ['rgb' => 'FFFFFF']],
+            'fill' => ['fillType' => Fill::FILL_SOLID, 'startColor' => ['rgb' => '4472C4']],
+            'alignment' => ['horizontal' => Alignment::HORIZONTAL_CENTER, 'vertical' => Alignment::VERTICAL_CENTER],
+            'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+        ];
+        $summaryStyle = ['font' => ['bold' => true]];
+
+        $row = 1;
+        $sheet->setCellValue('A'.$row, 'Lokasi:');
+        $sheet->setCellValue('B'.$row, $filterSummary['lokasi']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Kandang:');
+        $sheet->setCellValue('B'.$row, $filterSummary['kandang']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Jenis Bibit:');
+        $sheet->setCellValue('B'.$row, $filterSummary['jenis_bibit']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $sheet->setCellValue('A'.$row, 'Tanggal Masuk:');
+        $sheet->setCellValue('B'.$row, $filterSummary['tanggal_masuk']);
+        $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
+        $row++;
+        $row++;
+
+        $headers = ['Jenis Bibit', 'Lokasi', 'Kandang', 'Tanggal Masuk', 'Tanggal Selesai', 'Status'];
+        $headerRow = $row;
+        $column = 'A';
+        foreach ($headers as $header) {
+            $sheet->setCellValue($column.$headerRow, $header);
+            $sheet->getStyle($column.$headerRow)->applyFromArray($headerStyle);
+            $column++;
+        }
+
+        $row = $headerRow + 1;
+        foreach ($bibits as $bibit) {
+            $sheet->setCellValue('A'.$row, $bibit->jenis_bibit);
+            $sheet->setCellValue('B'.$row, $bibit->lokasi->nama_lokasi ?? '-');
+            $sheet->setCellValue('C'.$row, $bibit->kandang->nama_kandang ?? '-');
+            $sheet->setCellValue('D'.$row, $bibit->tanggal_masuk ? \Carbon\Carbon::parse($bibit->tanggal_masuk)->format('d/m/Y') : '-');
+            $sheet->setCellValue('E'.$row, $bibit->tanggal_selesai ? \Carbon\Carbon::parse($bibit->tanggal_selesai)->format('d/m/Y') : '-');
+            $sheet->setCellValue('F'.$row, $bibit->status == 'aktif' ? 'Aktif' : 'Selesai');
+            $sheet->getStyle('A'.$row.':F'.$row)->applyFromArray([
+                'borders' => ['allBorders' => ['borderStyle' => Border::BORDER_THIN]],
+            ]);
+            $row++;
+        }
+
+        foreach (range('A', 'F') as $col) {
+            $sheet->getColumnDimension($col)->setAutoSize(true);
+        }
+        $sheet->getRowDimension($headerRow)->setRowHeight(25);
+
+        $filename = 'recap_bibit_'.date('Y-m-d_His').'.xlsx';
+        $tempFile = tempnam(sys_get_temp_dir(), 'xlsx');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempFile);
+
+        return response()->download($tempFile, $filename, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        ])->deleteFileAfterSend(true);
+    }
+
+    public function exportRecapBibitPdf(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $query = Bibit::with(['lokasi', 'kandang']);
+
+        if ($request->filled('lokasi_id')) {
+            $query->where('lokasi_id', $request->lokasi_id);
+        }
+        if ($request->filled('kandang_id')) {
+            $query->where('kandang_id', $request->kandang_id);
+        }
+        if ($request->filled('jenis_bibit')) {
+            $query->where('jenis_bibit', $request->jenis_bibit);
+        }
+        if ($request->filled('tanggal_masuk_start')) {
+            $query->where('tanggal_masuk', '>=', $request->tanggal_masuk_start);
+        }
+        if ($request->filled('tanggal_masuk_end')) {
+            $query->where('tanggal_masuk', '<=', $request->tanggal_masuk_end);
+        }
+
+        $bibits = $query->orderByDesc('tanggal_masuk')->get();
+
+        $filterSummary = [
+            'lokasi' => $request->filled('lokasi_id') ? Lokasi::find($request->lokasi_id)->nama_lokasi : 'Semua Lokasi',
+            'kandang' => $request->filled('kandang_id') ? Kandang::find($request->kandang_id)->nama_kandang : 'Semua Kandang',
+            'jenis_bibit' => $request->filled('jenis_bibit') ? $request->jenis_bibit : 'Semua Jenis',
+            'tanggal_masuk' => ($request->filled('tanggal_masuk_start') || $request->filled('tanggal_masuk_end'))
+                ? ($request->tanggal_masuk_start ?? '...') . ' s/d ' . ($request->tanggal_masuk_end ?? '...')
+                : 'Semua Tanggal',
+        ];
+
+        $pdf = Pdf::loadView('laporan.recap-bibit-pdf', [
+            'bibits' => $bibits,
+            'filterSummary' => $filterSummary,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('recap_bibit_'.date('Y-m-d_His').'.pdf');
     }
 
     // ===================================
