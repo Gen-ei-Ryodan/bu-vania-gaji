@@ -537,6 +537,56 @@ class LaporanController extends Controller
         ])->deleteFileAfterSend(true);
     }
 
+    // =========================
+    // RECAP BIBIT
+    // =========================
+
+    public function recapBibit(Request $request)
+    {
+        if (! auth()->user()->hasRole('Owner')) {
+            abort(403, 'Unauthorized access.');
+        }
+
+        $query = Bibit::with(['lokasi', 'kandang']);
+
+        if ($request->filled('lokasi_id')) {
+            $query->where('lokasi_id', $request->lokasi_id);
+        }
+
+        if ($request->filled('kandang_id')) {
+            $query->where('kandang_id', $request->kandang_id);
+        }
+
+        if ($request->filled('jenis_bibit')) {
+            $query->where('jenis_bibit', $request->jenis_bibit);
+        }
+
+        if ($request->filled('tanggal_masuk_start')) {
+            $query->where('tanggal_masuk', '>=', $request->tanggal_masuk_start);
+        }
+
+        if ($request->filled('tanggal_masuk_end')) {
+            $query->where('tanggal_masuk', '<=', $request->tanggal_masuk_end);
+        }
+
+        $bibits = $query->orderByDesc('tanggal_masuk')->get();
+
+        $lokasis = Lokasi::all();
+        $kandangs = Kandang::all();
+        $jenisBibits = Bibit::select('jenis_bibit')->distinct()->pluck('jenis_bibit');
+
+        $filterSummary = [
+            'lokasi' => $request->filled('lokasi_id') ? Lokasi::find($request->lokasi_id)->nama_lokasi : 'Semua Lokasi',
+            'kandang' => $request->filled('kandang_id') ? Kandang::find($request->kandang_id)->nama_kandang : 'Semua Kandang',
+            'jenis_bibit' => $request->filled('jenis_bibit') ? $request->jenis_bibit : 'Semua Jenis',
+            'tanggal_masuk' => ($request->filled('tanggal_masuk_start') || $request->filled('tanggal_masuk_end'))
+                ? ($request->tanggal_masuk_start ?? '...') . ' s/d ' . ($request->tanggal_masuk_end ?? '...')
+                : 'Semua Tanggal',
+        ];
+
+        return view('laporan.recap-bibit', compact('bibits', 'lokasis', 'kandangs', 'jenisBibits', 'filterSummary'));
+    }
+
     // ===================================
     // FILTER SUMMARY BUILDERS
     // ===================================
