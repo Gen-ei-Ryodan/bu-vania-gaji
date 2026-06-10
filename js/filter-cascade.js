@@ -75,6 +75,51 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     // Function untuk update bibit berdasarkan kandang
+    function updateBibitByLokasi(lokasiId, bibitSelectId) {
+        const bibitSelect = document.querySelector(`#${bibitSelectId}`);
+        if (!bibitSelect || !tomSelects[bibitSelectId]) return;
+
+        const isFilter = bibitSelectId === 'filter_bibit';
+        const previousValue = isFilter ? tomSelects[bibitSelectId].getValue() : null;
+
+        // Clear options except placeholder
+        tomSelects[bibitSelectId].clear();
+        tomSelects[bibitSelectId].clearOptions();
+
+        if (isFilter) {
+            tomSelects[bibitSelectId].addOption({ value: '', text: 'Semua Bibit' });
+        }
+
+        fetch(`/api/bibit?lokasi_id=${lokasiId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.length > 0) {
+                    data.forEach(bibit => {
+                        let text = `${bibit.jenis_bibit} - ${bibit.kandang?.nama_kandang || ''}`;
+                        if (bibit.status !== 'aktif') {
+                            text += ' [Selesai]';
+                        }
+                        tomSelects[bibitSelectId].addOption({
+                            value: bibit.id,
+                            text: text
+                        });
+                    });
+                    tomSelects[bibitSelectId].refreshOptions(false);
+
+                    if (isFilter && previousValue) {
+                        tomSelects[bibitSelectId].setValue(previousValue, true);
+                    }
+                } else {
+                    if (isFilter) {
+                        tomSelects[bibitSelectId].refreshOptions(false);
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching bibit by lokasi:', error);
+            });
+    }
+
     function updateBibitByKandang(kandangId, bibitSelectId) {
         // Skip jika sedang auto-filling dari bibit (mencegah infinite loop)
         if (isAutoFilling) {
@@ -281,16 +326,23 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
-                updateKandangByLokasi(value, kandangSelectId, isBibitForm);
-                
-                // If this is filter form, also update bibit filter
-                if (lokasiSelect.id === 'filter_lokasi') {
-                    const bibitSelectId = 'filter_bibit';
-                    if (tomSelects[bibitSelectId]) {
-                        // Clear bibit filter when lokasi changes
-                        tomSelects[bibitSelectId].clear();
+                updateKandangByLokasi(value, kandangSelectId, isBibitForm, () => {
+                    // After kandang updated, if no kandang selected, fetch bibit by lokasi
+                    if (lokasiSelect.id === 'filter_lokasi') {
+                        const bibitSelectId = 'filter_bibit';
+                        if (tomSelects[bibitSelectId]) {
+                            const kandangTom = tomSelects[kandangSelectId];
+                            const selectedKandang = kandangTom ? kandangTom.getValue() : '';
+                            if (selectedKandang) {
+                                updateBibitByKandang(selectedKandang, bibitSelectId);
+                            } else if (value) {
+                                updateBibitByLokasi(value, bibitSelectId);
+                            } else {
+                                updateBibitByKandang('', bibitSelectId);
+                            }
+                        }
                     }
-                }
+                });
             });
         }
     });
@@ -343,5 +395,6 @@ document.addEventListener('DOMContentLoaded', function() {
     window.tomSelects = tomSelects;
     window.updateKandangByLokasi = updateKandangByLokasi;
     window.updateBibitByKandang = updateBibitByKandang;
+    window.updateBibitByLokasi = updateBibitByLokasi;
     window.autoFillFromBibit = autoFillFromBibit;
 });

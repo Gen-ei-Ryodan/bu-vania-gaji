@@ -42,7 +42,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Kandang</label>
-                <select name="kandang_id" id="filter_kandang" class="tom-select form-select">
+                <select name="kandang_id" id="filter_kandang" class="tom-select form-select" data-target-bibit="filter_bibit">
                     <option value="">Semua Kandang</option>
                     @foreach($kandangs as $kandang)
                     <option value="{{ $kandang->id }}" data-lokasi="{{ $kandang->lokasi_id }}" {{ request('kandang_id') == $kandang->id ? 'selected' : '' }}>

@@ -23,5 +23,12 @@ Homestead.json
 Homestead.yaml
 Thumbs.db
 
-# NOTE: /laravel/ is NOT ignored here - it contains Laravel app files
-# NOTE: /index.php, /.htaccess, /css/, /js/ are NOT ignored - they are the public root
+# Ignore deploy branch leftovers
+/laravel/
+/index.php
+/.htaccess
+/css/
+/js/
+/Archive.zip
+robots.txt
+favicon.ico
