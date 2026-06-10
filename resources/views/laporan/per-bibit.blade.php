@@ -9,7 +9,9 @@
         <a href="{{ route('laporan.per-bibit.export', request()->all()) }}" class="btn btn-success">
             <i class="bi bi-download"></i> Export XLSX
         </a>
-        
+        <a href="{{ route('laporan.per-bibit.export-pdf', request()->all()) }}" class="btn btn-danger">
+            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+        </a>
     </div>
 </div>
 
