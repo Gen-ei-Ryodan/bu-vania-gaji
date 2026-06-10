@@ -92,6 +92,10 @@
                 <i class="bi bi-geo-alt"></i>
                 <span>Laporan per Lokasi</span>
             </a>
+            <a class="nav-link {{ request()->routeIs('laporan.recap-bibit') ? 'active' : '' }}" href="{{ route('laporan.recap-bibit') }}">
+                <i class="bi bi-card-list"></i>
+                <span>Recap Bibit</span>
+            </a>
             @endrole
 
             @role('Owner')

@@ -29,7 +29,7 @@
             </div>
             <div class="col-md-3">
                 <label class="form-label">Lokasi</label>
-                <select name="lokasi_id" id="filter_lokasi" class="tom-select form-select" data-target-kandang="filter_kandang" data-target-bibit="filter_bibit">
+                <select name="lokasi_id" id="filter_lokasi" class="tom-select form-select" data-target-kandang="filter_kandang">
                     <option value="">Semua Lokasi</option>
                     @foreach($lokasis as $lokasi)
                     <option value="{{ $lokasi->id }}" {{ request('lokasi_id') == $lokasi->id ? 'selected' : '' }}>
