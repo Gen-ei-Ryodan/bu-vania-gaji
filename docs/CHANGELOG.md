@@ -1,5 +1,11 @@
 # CHANGELOG.md
 
+## v1.1 (2026-10-08)
+
+### Fitur
+- **Laporan per Bibit:** ditambahkan filter range tanggal (`start_date` & `end_date`) pada tampilan, export XLSX, dan export PDF. Jika filter tidak diisi, default periode tetap dari `tanggal_masuk` bibit (atau awal bulan berjalan jika bibit tidak dipilih) sampai hari ini.
+- Filter summary laporan per bibit kini menampilkan "Rentang Tanggal" (menggantikan "Dari Tanggal") agar konsisten dengan laporan lain.
+
 ## v1.0 (Awal)
 
 ### Keputusan Arsitektur

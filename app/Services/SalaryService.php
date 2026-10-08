@@ -218,12 +218,17 @@ class SalaryService
 
         if (! empty($filters['bibit_id'])) {
             $bibit = Bibit::find($filters['bibit_id']);
-            $startDate = $bibit ? Carbon::parse($bibit->tanggal_masuk) : now()->startOfMonth();
-        } else {
-            $startDate = now()->startOfMonth();
         }
 
-        $endDate = now();
+        $defaultStartDate = $bibit ? Carbon::parse($bibit->tanggal_masuk) : now()->startOfMonth();
+
+        $startDate = ! empty($filters['start_date'])
+            ? Carbon::parse($filters['start_date'])
+            : $defaultStartDate;
+
+        $endDate = ! empty($filters['end_date'])
+            ? Carbon::parse($filters['end_date'])
+            : now();
 
         $query = Karyawan::query()->with(['jabatan']);
 

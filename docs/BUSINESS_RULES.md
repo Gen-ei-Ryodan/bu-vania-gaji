@@ -25,7 +25,7 @@
 
 ### 4. Laporan
 - **Laporan Admin**: bisa diakses Admin & Owner — data gaji pokok role tertentu disembunyikan untuk Admin.
-- **Laporan per Bibit**: khusus Owner — menampilkan rekap gaji per bibit ayam.
+- **Laporan per Bibit**: khusus Owner — menampilkan rekap gaji per bibit ayam. Memiliki filter range tanggal (`start_date` & `end_date`); jika tidak diisi, default periode adalah dari `tanggal_masuk` bibit yang dipilih (atau awal bulan berjalan jika bibit tidak dipilih) sampai hari ini.
 - **Laporan per Lokasi**: khusus Owner — menampilkan rekap gaji per lokasi kandang.
 - Filter laporan: Jabatan, Lokasi, Kandang, Bibit, Nama Pegawai, Periode Tanggal.
 - Grand Total ditampilkan di footer tabel.

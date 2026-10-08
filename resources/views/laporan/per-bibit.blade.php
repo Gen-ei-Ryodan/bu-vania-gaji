@@ -67,6 +67,14 @@
                 <input type="text" name="nama_pegawai" class="form-control" value="{{ request('nama_pegawai') }}" placeholder="Cari nama...">
             </div>
             <div class="col-md-3">
+                <label class="form-label">Tanggal Mulai</label>
+                <input type="date" name="start_date" class="form-control" value="{{ request('start_date', $report['start_date']) }}">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Tanggal Akhir</label>
+                <input type="date" name="end_date" class="form-control" value="{{ request('end_date', $report['end_date']) }}">
+            </div>
+            <div class="col-md-3">
                 <label class="form-label">&nbsp;</label>
                 <div class="d-flex gap-2">
                     <button type="submit" class="btn btn-primary flex-fill">Filter</button>
@@ -86,7 +94,8 @@
                 Nama Pegawai: {{ $filterSummary['nama_pegawai'] }} |
                 Lokasi: {{ $filterSummary['lokasi'] }} |
                 Kandang: {{ $filterSummary['kandang'] }} |
-                Bibit: {{ $filterSummary['bibit'] }}
+                Bibit: {{ $filterSummary['bibit'] }} |
+                Rentang Tanggal: {{ $filterSummary['rentang_tanggal'] }}
             </div>
         </div>
         <h5 class="card-title">
@@ -96,7 +105,7 @@
             @else
                 Semua Bibit
             @endif
-            <small class="text-muted ms-2">Dari: {{ \Carbon\Carbon::parse($report['start_date'])->format('d/m/Y') }}</small>
+            <small class="text-muted ms-2">Periode: {{ \Carbon\Carbon::parse($report['start_date'])->format('d/m/Y') }} s/d {{ \Carbon\Carbon::parse($report['end_date'])->format('d/m/Y') }}</small>
         </h5>
         
         <div class="table-responsive">

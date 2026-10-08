@@ -27,7 +27,7 @@
         <div class="meta-row"><span class="label">Lokasi</span> {{ $filterSummary['lokasi'] }}</div>
         <div class="meta-row"><span class="label">Kandang</span> {{ $filterSummary['kandang'] }}</div>
         <div class="meta-row"><span class="label">Bibit</span> {{ $filterSummary['bibit'] }}</div>
-        <div class="meta-row"><span class="label">Dari Tanggal</span> {{ $filterSummary['tanggal_mulai'] }}</div>
+        <div class="meta-row"><span class="label">Rentang Tanggal</span> {{ $filterSummary['rentang_tanggal'] }}</div>
     </div>
 
     @php $grandTotalBiaya = 0; @endphp

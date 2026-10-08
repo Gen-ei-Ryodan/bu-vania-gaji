@@ -308,7 +308,7 @@ class LaporanController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $filters = $request->only(['jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
+        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
         $report = $this->salaryService->calculatePerBibitReport($filters);
         $this->maskGajiPokokUntukAdmin($report);
 
@@ -327,7 +327,7 @@ class LaporanController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $filters = $request->only(['jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
+        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
         $report = $this->salaryService->calculatePerBibitReport($filters);
         $this->maskGajiPokokUntukAdmin($report);
         $filterSummary = $this->buildPerBibitFilterSummary($filters, $report);
@@ -370,8 +370,8 @@ class LaporanController extends Controller
         $sheet->setCellValue('B'.$row, $filterSummary['bibit']);
         $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
         $row++;
-        $sheet->setCellValue('A'.$row, 'Dari Tanggal:');
-        $sheet->setCellValue('B'.$row, $filterSummary['tanggal_mulai']);
+        $sheet->setCellValue('A'.$row, 'Rentang Tanggal:');
+        $sheet->setCellValue('B'.$row, $filterSummary['rentang_tanggal']);
         $sheet->getStyle('A'.$row)->applyFromArray($summaryStyle);
         $row++;
         $row++;
@@ -426,7 +426,7 @@ class LaporanController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $filters = $request->only(['jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
+        $filters = $request->only(['start_date', 'end_date', 'jabatan_id', 'lokasi_id', 'kandang_id', 'bibit_id', 'nama_pegawai']);
         $report = $this->salaryService->calculatePerBibitReport($filters);
         $this->maskGajiPokokUntukAdmin($report);
         $filterSummary = $this->buildPerBibitFilterSummary($filters, $report);
@@ -796,7 +796,7 @@ class LaporanController extends Controller
             $bibitName = $bibit ? ($bibit->jenis_bibit . ' - ' . $bibit->kandang?->nama_kandang) : $bibitName;
         }
 
-        $tanggalMulai = date('d/m/Y', strtotime($report['start_date']));
+        $rentangTanggal = date('d/m/Y', strtotime($report['start_date'])) . ' s/d ' . date('d/m/Y', strtotime($report['end_date']));
 
         return [
             'jabatan' => $jabatanName,
@@ -804,7 +804,7 @@ class LaporanController extends Controller
             'lokasi' => $lokasiName,
             'kandang' => $kandangName,
             'bibit' => $bibitName,
-            'tanggal_mulai' => $tanggalMulai,
+            'rentang_tanggal' => $rentangTanggal,
         ];
     }
 
