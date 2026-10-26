@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dokumentasi REST API - Sistem Penggajian & Integrasi Vania</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-page: #0f172a;
+      --bg-card: #1e293b;
+      --bg-subtle: #334155;
+      --border-color: #334155;
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.15);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --code-bg: #090d16;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-page);
+      color: var(--text-main);
+      line-height: 1.6;
+      padding: 40px 20px;
+    }
+
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 36px;
+      margin-bottom: 32px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      top: -50px;
+      right: -50px;
+      width: 200px;
+      height: 200px;
+      background: var(--accent-glow);
+      filter: blur(50px);
+      border-radius: 50%;
+    }
+
+    .badge-live {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--success);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      margin-bottom: 12px;
+    }
+
+    .badge-live::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+    }
+
+    .quick-info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 16px;
+      margin-bottom: 32px;
+    }
+
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .info-card .label {
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .info-card .value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.95rem;
+      color: var(--accent);
+      word-break: break-all;
+    }
+
+    .copy-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-subtle);
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      cursor: pointer;
+      color: var(--text-main);
+      border: 1px solid transparent;
+      margin-top: 8px;
+      transition: all 0.2s;
+    }
+
+    .copy-pill:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .section-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .section-title::before {
+      content: '';
+      width: 4px;
+      height: 20px;
+      background: var(--accent);
+      border-radius: 2px;
+    }
+
+    .endpoint-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 14px;
+      margin-bottom: 24px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .endpoint-header {
+      padding: 16px 20px;
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .method-get {
+      background: #0284c7;
+      color: white;
+      font-weight: 700;
+      font-size: 0.8rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      letter-spacing: 0.05em;
+    }
+
+    .endpoint-path {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    .endpoint-desc {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+      margin-left: auto;
+    }
+
+    .endpoint-body {
+      padding: 24px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 16px 0;
+      font-size: 0.9rem;
+    }
+
+    th, td {
+      padding: 10px 14px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    th {
+      background: rgba(255, 255, 255, 0.03);
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    td code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      background: var(--code-bg);
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 16px;
+      margin: 14px 0;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      position: relative;
+    }
+
+    .code-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    .rule-box {
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+      border-radius: 10px;
+      padding: 18px;
+      margin: 20px 0;
+    }
+
+    .rule-box h4 {
+      color: var(--accent);
+      margin-bottom: 8px;
+      font-size: 0.95rem;
+    }
+
+    .rule-box ul {
+      padding-left: 20px;
+      font-size: 0.9rem;
+      color: #cbd5e1;
+    }
+
+    .footer {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    @media (max-width: 768px) {
+      body { padding: 16px 12px; }
+      .header { padding: 24px 18px; }
+      .endpoint-desc { width: 100%; margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-live">PRODUCTION READY & LIVE</div>
+      <h1>Dokumentasi REST API Penggajian</h1>
+      <p class="subtitle">Panduan integrasi machine-to-machine (M2M) untuk software custom pihak klien Bu Vania.</p>
+    </div>
+
+    <!-- Quick Info Cards -->
+    <div class="quick-info-grid">
+      <div class="info-card">
+        <div class="label">Production Base URL</div>
+        <div class="value">https://absplt.3putraperkasa.com/v1</div>
+      </div>
+      <div class="info-card">
+        <div class="label">Header Autentikasi (Wajib)</div>
+        <div class="value">X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e</div>
+        <button class="copy-pill" onclick="navigator.clipboard.writeText('f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e'); alert('API Key disalin!')">📋 Salin Key</button>
+      </div>
+    </div>
+
+    <!-- Rumus Bisnis -->
+    <div class="rule-box">
+      <h4>Rumus Baku Perhitungan Gaji Sistem:</h4>
+      <ul>
+        <li><strong>Gaji Harian:</strong> <code>Gaji Pokok / 30</code></li>
+        <li><strong>Gaji Setengah Hari (Half Day):</strong> <code>Gaji Harian / 2</code></li>
+        <li><strong>Total Gaji Karyawan:</strong> <code>(Hari Masuk Full × Gaji Harian) + (Hari Masuk Half × Gaji Half Day)</code></li>
+      </ul>
+    </div>
+
+    <div class="section-title">Koleksi Endpoint</div>
+
+    <!-- Endpoint 1 -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-get">GET</span>
+        <span class="endpoint-path">/v1/penggajian</span>
+        <span class="endpoint-desc">Tarik rekap gaji & kalkulasi kehadiran</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Mengambil data penggajian karyawan per periode tanggal lengkap dengan rincian hari masuk, tarif harian, dan total gaji bersih.</p>
+
+        <table>
+          <thead>
+            <tr>
+              <th>Query Parameter</th>
+              <th>Tipe</th>
+              <th>Default</th>
+              <th>Keterangan</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>start_date</code></td>
+              <td>Date (YYYY-MM-DD)</td>
+              <td>Awal bulan berjalan</td>
+              <td>Tanggal mulai periode</td>
+            </tr>
+            <tr>
+              <td><code>end_date</code></td>
+              <td>Date (YYYY-MM-DD)</td>
+              <td>Akhir bulan berjalan</td>
+              <td>Tanggal akhir periode</td>
+            </tr>
+            <tr>
+              <td><code>karyawan_id</code></td>
+              <td>Integer</td>
+              <td>-</td>
+              <td>Filter spesifik per 1 karyawan</td>
+            </tr>
+            <tr>
+              <td><code>lokasi_id</code></td>
+              <td>Integer</td>
+              <td>-</td>
+              <td>Filter per lokasi kandang</td>
+            </tr>
+            <tr>
+              <td><code>kandang_id</code></td>
+              <td>Integer</td>
+              <td>-</td>
+              <td>Filter per kandang</td>
+            </tr>
+            <tr>
+              <td><code>bibit_id</code></td>
+              <td>Integer</td>
+              <td>-</td>
+              <td>Filter per siklus bibit</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="code-title">Contoh cURL</div>
+        <div class="code-block">curl -X GET "https://absplt.3putraperkasa.com/v1/penggajian?start_date=2026-10-01&end_date=2026-10-31" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e" \
+  -H "Accept: application/json"</div>
+
+        <div class="code-title">Format JSON Response (200 OK)</div>
+        <div class="code-block">{
+  "success": true,
+  "message": "Data penggajian berhasil diambil.",
+  "meta": {
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-31",
+    "total_biaya": 44639166.67,
+    "total_karyawan": 72
+  },
+  "data": [
+    {
+      "karyawan_id": 1,
+      "nama": "Mak Gik",
+      "jabatan": "Bendo anak kandang",
+      "gaji_pokok": "1800000.00",
+      "total_hari_full": 22,
+      "total_hari_half": 1,
+      "total_gaji": 1350000,
+      "start_date": "2026-10-02T00:00:00.000000Z",
+      "end_date": "2026-10-26T00:00:00.000000Z"
+    }
+  ]
+}</div>
+      </div>
+    </div>
+
+    <!-- Endpoint 2 -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-get">GET</span>
+        <span class="endpoint-path">/v1/karyawan</span>
+        <span class="endpoint-desc">Master data seluruh karyawan</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Mengambil daftar master karyawan aktif beserta jabatan dan tarif gaji pokok yang berlaku.</p>
+
+        <div class="code-title">Contoh cURL</div>
+        <div class="code-block">curl -X GET "https://absplt.3putraperkasa.com/v1/karyawan" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e"</div>
+
+        <div class="code-title">Format JSON Response (200 OK)</div>
+        <div class="code-block">{
+  "success": true,
+  "message": "Data karyawan berhasil diambil.",
+  "meta": { "total": 72 },
+  "data": [
+    {
+      "karyawan_id": 1,
+      "nama": "Mak Gik",
+      "jabatan": "Bendo anak kandang",
+      "gaji_pokok": 1800000,
+      "status_aktif": true
+    }
+  ]
+}</div>
+      </div>
+    </div>
+
+    <!-- Endpoint 3 -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-get">GET</span>
+        <span class="endpoint-path">/v1/absensi</span>
+        <span class="endpoint-desc">Log presensi kehadiran harian</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Mengambil histori kehadiran harian per orang (status <code>full</code> atau <code>half</code>).</p>
+
+        <div class="code-title">Contoh cURL</div>
+        <div class="code-block">curl -X GET "https://absplt.3putraperkasa.com/v1/absensi?start_date=2026-10-01&end_date=2026-10-31" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e"</div>
+      </div>
+    </div>
+
+    <!-- Endpoint 4 -->
+    <div class="endpoint-card">
+      <div class="endpoint-header">
+        <span class="method-get">GET</span>
+        <span class="endpoint-path">/v1/master-data</span>
+        <span class="endpoint-desc">Mapping ID Jabatan, Lokasi, Kandang, & Bibit</span>
+      </div>
+      <div class="endpoint-body">
+        <p>Digunakan untuk lookup ID dan relasi data di program custom eksternal.</p>
+
+        <div class="code-title">Contoh cURL</div>
+        <div class="code-block">curl -X GET "https://absplt.3putraperkasa.com/v1/master-data" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e"</div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      Sistem Manajemen Pembibitan Ayam &bull; REST API v1.0 &bull; absplt.3putraperkasa.com
+    </div>
+  </div>
+
+</body>
+</html>
