@@ -25,6 +25,7 @@ class DatabaseSeeder extends Seeder
             GajiSeeder::class,
             AbsensiSeeder::class,
             PeriodDataSeeder::class,
+            ApiClientSeeder::class,
         ]);
     }
 }

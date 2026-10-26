@@ -1,5 +1,16 @@
 # CHANGELOG.md
 
+## v1.2 (2026-10-27)
+
+### Fitur
+- **REST API Read-Only (integrasi eksternal):** endpoint `GET /v1/penggajian`, `/v1/karyawan`, `/v1/absensi`, `/v1/master-data` pada `routes/api.php` (prefix `v1` via `apiPrefix` di `bootstrap/app.php`, agar tidak bentrok dengan route AJAX `/api/*` di web).
+- **Autentikasi API Key:** tabel `api_clients` + model `ApiClient` + middleware `VerifyApiKey` (alias `api.key`), cek header `X-Api-Key`, update `last_used_at` bila valid. Seeder `ApiClientSeeder` membuat client "Client Vania Integration".
+- Kalkulasi penggajian API memakai `SalaryService::calculateSalaryReport` — 100% konsisten dengan rumus sistem internal.
+- Dokumentasi API untuk client: `docs/API_VANIA.md`.
+
+### Keputusan Arsitektur
+- API routes didaftarkan via `withRouting(api: ..., apiPrefix: 'v1')` — prefix `v1` di level framework, bukan di dalam file routes.
+
 ## v1.1 (2026-10-08)
 
 ### Fitur
