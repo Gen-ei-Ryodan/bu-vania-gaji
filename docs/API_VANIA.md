@@ -1,251 +1,230 @@
-# API Dokumen — Payroll & Master Data (Read-Only)
+# Panduan Integrasi REST API — Sistem Penggajian & Master Data
 
-Dokumen ini untuk client eksternal (integrasi Vania). API bersifat **read-only** (hanya GET) dan diamankan dengan API Key.
+Dokumentasi ini ditujukan untuk tim teknis integrasi eksternal. API ini berstatus **Production** dan bersifat **Read-Only (GET)** menggunakan autentikasi **API Key**.
 
-## Base URL
+---
 
-```
-https://<domain-anda>/v1
-```
+## 1. Environment & Base URL
 
-Contoh lokal:
+| Environment | Base URL |
+| :--- | :--- |
+| **Production** | `https://absplt.3putraperkasa.com/v1` |
 
-```
-http://localhost:8000/v1
-```
+---
 
-## Autentikasi
+## 2. Autentikasi
 
-Semua request wajib menyertakan header:
+Setiap HTTP Request wajib menyertakan header:
 
-| Header | Nilai | Keterangan |
-|---|---|---|
-| `X-Api-Key` | 64 karakter | API Key dari client (diberikan oleh sistem) |
+| Header | Value | Keterangan |
+| :--- | :--- | :--- |
+| `X-Api-Key` | `f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e` | API Key resmi client |
+| `Accept` | `application/json` | Format respons yang diharapkan |
 
-```
-GET /v1/penggajian HTTP/1.1
-Host: your-domain.com
-X-Api-Key: 3f9a... (64 karakter)
-Accept: application/json
-```
+---
 
-## Response Envelope
+## 3. Format Respons Standar (Response Envelope)
 
-Semua response menggunakan format standar:
+Semua endpoint menghasilkan response berformat JSON terstruktur:
 
 ```json
 {
-    "success": true,
-    "message": "Deskripsi pesan",
-    "meta": { },
-    "data": [ ]
+  "success": true,
+  "message": "Deskripsi status pemrosesan",
+  "meta": {
+    "total": 72
+  },
+  "data": []
+}
+```
+
+Jika autentikasi gagal atau API Key tidak disertakan:
+```json
+{
+  "success": false,
+  "message": "Invalid or missing API key"
 }
 ```
 
 ---
 
-## Endpoint
+## 4. Daftar Endpoint
 
-### 1. GET /v1/penggajian
+### 4.1. Rekap Data Penggajian
+Mengambil kalkulasi gaji karyawan, jumlah kehadiran (full day & half day), gaji pokok, dan total gaji per periode.
 
-Laporan penggajian per karyawan pada periode tertentu. Rumus kalkulasi 100% sama dengan sistem internal (gaji harian = gaji pokok / 30, half day = setengah hari, split per riwayat perubahan gaji).
+- **Endpoint**: `GET /v1/penggajian`
+- **URL Lengkap**: `https://absplt.3putraperkasa.com/v1/penggajian`
 
-**Query Parameters** (semua opsional):
+#### Query Parameters (Opsional):
+| Parameter | Tipe | Contoh | Keterangan |
+| :--- | :--- | :--- | :--- |
+| `start_date` | `YYYY-MM-DD` | `2026-10-01` | Tanggal awal periode (Default: tanggal 1 bulan berjalan) |
+| `end_date` | `YYYY-MM-DD` | `2026-10-31` | Tanggal akhir periode (Default: akhir bulan berjalan) |
+| `karyawan_id` | Integer | `1` | Filter spesifik ID karyawan |
+| `lokasi_id` | Integer | `2` | Filter lokasi |
+| `kandang_id` | Integer | `5` | Filter kandang |
+| `bibit_id` | Integer | `12` | Filter siklus bibit ayam |
 
-| Parameter | Tipe | Keterangan |
-|---|---|---|
-| `start_date` | date (Y-m-d) | Awal periode. Default: awal bulan berjalan |
-| `end_date` | date (Y-m-d) | Akhir periode. Default: akhir bulan berjalan |
-| `lokasi_id` | integer | Filter absensi per lokasi |
-| `kandang_id` | integer | Filter absensi per kandang |
-| `bibit_id` | integer | Filter absensi per batch bibit |
-| `karyawan_id` | integer | Filter satu karyawan |
-
-**Response 200:**
-
-```json
-{
-    "success": true,
-    "message": "Data penggajian berhasil diambil.",
-    "meta": {
-        "start_date": "2026-10-01",
-        "end_date": "2026-10-31",
-        "total_biaya": 4500000.0,
-        "total_karyawan": 2
-    },
-    "data": [
-        {
-            "karyawan_id": 1,
-            "nama": "Budi",
-            "jabatan": "Anak Kandang",
-            "gaji_pokok": "3000000.00",
-            "total_hari_full": 20,
-            "total_hari_half": 2,
-            "total_gaji": 2100000.0,
-            "start_date": "2026-10-01",
-            "end_date": "2026-10-30"
-        }
-    ]
-}
+#### Contoh cURL:
+```bash
+curl -X GET "https://absplt.3putraperkasa.com/v1/penggajian?start_date=2026-10-01&end_date=2026-10-31" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e" \
+  -H "Accept: application/json"
 ```
 
-> Catatan: satu karyawan bisa menghasilkan lebih dari satu baris jika gaji pokok berubah di tengah periode.
-
----
-
-### 2. GET /v1/karyawan
-
-Daftar karyawan **aktif** beserta jabatan dan gaji pokok yang berlaku saat ini.
-
-**Query Parameters:** tidak ada.
-
-**Response 200:**
-
+#### Contoh Response:
 ```json
 {
-    "success": true,
-    "message": "Data karyawan berhasil diambil.",
-    "meta": { "total": 2 },
-    "data": [
-        {
-            "karyawan_id": 1,
-            "nama": "Budi",
-            "jabatan": "Anak Kandang",
-            "gaji_pokok": 3000000.0,
-            "status_aktif": true
-        }
-    ]
-}
-```
-
----
-
-### 3. GET /v1/absensi
-
-Daftar absensi per periode tanggal, lengkap dengan relasi karyawan, jabatan, lokasi, kandang, dan bibit.
-
-**Query Parameters** (semua opsional):
-
-| Parameter | Tipe | Keterangan |
-|---|---|---|
-| `start_date` | date (Y-m-d) | Default: awal bulan berjalan |
-| `end_date` | date (Y-m-d) | Default: hari ini |
-| `karyawan_id` | integer | Filter per karyawan |
-| `lokasi_id` | integer | Filter per lokasi |
-| `kandang_id` | integer | Filter per kandang |
-| `bibit_id` | integer | Filter per batch bibit |
-
-**Response 200:**
-
-```json
-{
-    "success": true,
-    "message": "Data absensi berhasil diambil.",
-    "meta": {
-        "start_date": "2026-10-01",
-        "end_date": "2026-10-27",
-        "total": 1
-    },
-    "data": [
-        {
-            "id": 10,
-            "karyawan_id": 1,
-            "jabatan_id": 4,
-            "lokasi_id": 1,
-            "kandang_id": 1,
-            "bibit_id": 1,
-            "tipe_absen": "full",
-            "tanggal": "2026-10-27",
-            "karyawan": { "id": 1, "nama": "Budi", "jabatan_id": 4 },
-            "jabatan": { "id": 4, "nama_jabatan": "Anak Kandang" },
-            "lokasi": { "id": 1, "nama_lokasi": "Lokasi A" },
-            "kandang": { "id": 1, "nama_kandang": "Kandang 1", "lokasi_id": 1 },
-            "bibit": { "id": 1, "jenis_bibit": "DOC", "tanggal_masuk": "2026-09-01", "status": "aktif" }
-        }
-    ]
-}
-```
-
-> `tipe_absen`: `full` = satu hari penuh, `half` = setengah hari.
-
----
-
-### 4. GET /v1/master-data
-
-Daftar seluruh data master: jabatan, lokasi, kandang, dan bibit.
-
-**Query Parameters:** tidak ada.
-
-**Response 200:**
-
-```json
-{
-    "success": true,
-    "message": "Data master berhasil diambil.",
-    "meta": {},
-    "data": {
-        "jabatan": [
-            { "id": 1, "nama_jabatan": "Mandor" }
-        ],
-        "lokasi": [
-            { "id": 1, "nama_lokasi": "Lokasi A" }
-        ],
-        "kandang": [
-            { "id": 1, "nama_kandang": "Kandang 1", "lokasi_id": 1, "lokasi": { "id": 1, "nama_lokasi": "Lokasi A" } }
-        ],
-        "bibit": [
-            {
-                "id": 1,
-                "lokasi_id": 1,
-                "kandang_id": 1,
-                "jenis_bibit": "DOC",
-                "tanggal_masuk": "2026-09-01",
-                "tanggal_selesai": null,
-                "status": "aktif",
-                "lokasi": { "id": 1, "nama_lokasi": "Lokasi A" },
-                "kandang": { "id": 1, "nama_kandang": "Kandang 1" }
-            }
-        ]
+  "success": true,
+  "message": "Data penggajian berhasil diambil.",
+  "meta": {
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-31",
+    "total_biaya": 44639166.67,
+    "total_karyawan": 72
+  },
+  "data": [
+    {
+      "karyawan_id": 1,
+      "nama": "Mak Gik",
+      "jabatan": "Bendo anak kandang",
+      "gaji_pokok": "1800000.00",
+      "total_hari_full": 22,
+      "total_hari_half": 1,
+      "total_gaji": 1350000,
+      "start_date": "2026-10-02T00:00:00.000000Z",
+      "end_date": "2026-10-26T00:00:00.000000Z"
     }
+  ]
 }
 ```
 
 ---
 
-## Error Codes
+### 4.2. Master Data Karyawan
+Mengambil daftar karyawan aktif beserta jabatan dan tarif gaji pokok yang sedang berlaku.
 
-| Status | Message | Keterangan |
-|---|---|---|
-| 401 | `Invalid or missing API key` | Header `X-Api-Key` kosong, tidak valid, atau client tidak aktif |
-| 422 | `The ... field ...` | Validasi input gagal (format tanggal salah, dsb). Body berisi `errors` per field |
-| 404 | — | Endpoint tidak ditemukan |
-| 500 | — | Terjadi kesalahan server (hubungi admin) |
+- **Endpoint**: `GET /v1/karyawan`
+- **URL Lengkap**: `https://absplt.3putraperkasa.com/v1/karyawan`
 
-**Contoh 401:**
-
-```json
-{
-    "success": false,
-    "message": "Invalid or missing API key"
-}
+#### Contoh cURL:
+```bash
+curl -X GET "https://absplt.3putraperkasa.com/v1/karyawan" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e" \
+  -H "Accept: application/json"
 ```
 
-**Contoh 422:**
-
+#### Contoh Response:
 ```json
 {
-    "message": "The end_date field must be a date or equal to start_date.",
-    "errors": {
-        "end_date": ["The end_date field must be a date or equal to start_date."]
+  "success": true,
+  "message": "Data karyawan berhasil diambil.",
+  "meta": {
+    "total": 72
+  },
+  "data": [
+    {
+      "karyawan_id": 1,
+      "nama": "Mak Gik",
+      "jabatan": "Bendo anak kandang",
+      "gaji_pokok": 1800000,
+      "status_aktif": true
     }
+  ]
 }
 ```
 
 ---
 
-## Catatan Integrasi
+### 4.3. Data Absensi Harian
+Mengambil log kehadiran presensi harian per karyawan beserta lokasi, kandang, dan bibit terkait.
 
-- API hanya melayani **GET** (read-only). Tidak ada endpoint create/update/delete.
-- `last_used_at` client dicatat otomatis setiap request berhasil — berguna untuk monitoring pemakaian.
-- API Key yang inactive (`is_active = false`) otomatis ditolak dengan 401.
-- Rate limit mengikuti konfigurasi default Laravel (bila diperlukan, tambahkan nanti).
+- **Endpoint**: `GET /v1/absensi`
+- **URL Lengkap**: `https://absplt.3putraperkasa.com/v1/absensi`
+
+#### Query Parameters (Opsional):
+| Parameter | Tipe | Contoh | Keterangan |
+| :--- | :--- | :--- | :--- |
+| `start_date` | `YYYY-MM-DD` | `2026-10-01` | Filter tanggal mulai |
+| `end_date` | `YYYY-MM-DD` | `2026-10-31` | Filter tanggal akhir |
+| `karyawan_id` | Integer | `1` | Filter ID karyawan |
+| `lokasi_id` | Integer | `2` | Filter ID lokasi |
+| `kandang_id` | Integer | `5` | Filter ID kandang |
+| `bibit_id` | Integer | `10` | Filter ID bibit |
+
+#### Contoh cURL:
+```bash
+curl -X GET "https://absplt.3putraperkasa.com/v1/absensi?start_date=2026-10-01&end_date=2026-10-31" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e" \
+  -H "Accept: application/json"
+```
+
+#### Contoh Response:
+```json
+{
+  "success": true,
+  "message": "Data absensi berhasil diambil.",
+  "meta": {
+    "total": 120
+  },
+  "data": [
+    {
+      "id": 501,
+      "tanggal": "2026-10-26",
+      "tipe_absen": "full",
+      "karyawan": {
+        "id": 1,
+        "nama": "Mak Gik",
+        "jabatan": "Bendo anak kandang"
+      },
+      "lokasi": {
+        "id": 1,
+        "nama_lokasi": "Bendo"
+      },
+      "kandang": {
+        "id": 2,
+        "nama_kandang": "Kandang 2"
+      },
+      "bibit": {
+        "id": 5,
+        "nama_bibit": "Bibit Batch 5"
+      }
+    }
+  ]
+}
+```
+
+---
+
+### 4.4. Master Data Referensi (Lookups)
+Mengambil daftar ID dan Nama untuk referensi Jabatan, Lokasi, Kandang, dan Bibit agar sinkron dengan sistem custom klien.
+
+- **Endpoint**: `GET /v1/master-data`
+- **URL Lengkap**: `https://absplt.3putraperkasa.com/v1/master-data`
+
+#### Contoh cURL:
+```bash
+curl -X GET "https://absplt.3putraperkasa.com/v1/master-data" \
+  -H "X-Api-Key: f6db3e0c384f6685f1226476337878497c6daf3600435522237692aa224e020e" \
+  -H "Accept: application/json"
+```
+
+---
+
+## 5. Rumus Perhitungan Gaji Resmi
+
+Perhitungan total gaji mengikuti regulasi sistem internal Bu Vania:
+1. `Gaji Harian = Gaji Pokok / 30`
+2. `Gaji Setengah Hari (Half Day) = Gaji Harian / 2`
+3. `Total Gaji = (Hari Full × Gaji Harian) + (Hari Half × Gaji Half Day)`
+
+---
+
+## 6. HTTP Status Code
+
+| Status Code | Kondisi |
+| :--- | :--- |
+| `200 OK` | Request berhasil diproses dan mengembalikan data |
+| `401 Unauthorized` | Header `X-Api-Key` tidak ada, salah, atau telah dinonaktifkan |
+| `500 Internal Error` | Terjadi kendala server internal |
