@@ -42,7 +42,7 @@ class GajiController extends Controller
             });
         }
 
-        $gajis = $query->latest('berlaku_mulai')->paginate(20);
+        $gajis = $query->latest('berlaku_mulai')->paginate(20)->withQueryString();
         $karyawans = Karyawan::with('jabatan')->orderBy('nama')->get();
         $jabatans = Jabatan::orderBy('nama_jabatan')->get();
 

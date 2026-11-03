@@ -18,7 +18,7 @@ class KandangController extends Controller
             $query->where('lokasi_id', $request->lokasi_id);
         }
 
-        $kandangs = $query->latest()->paginate(20);
+        $kandangs = $query->latest()->paginate(20)->withQueryString();
         $lokasis = Lokasi::all();
 
         return view('kandang.index', compact('kandangs', 'lokasis'));

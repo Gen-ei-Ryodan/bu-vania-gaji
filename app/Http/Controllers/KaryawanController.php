@@ -25,7 +25,7 @@ class KaryawanController extends Controller
             $query->where('status_aktif', $request->status_aktif);
         }
 
-        $karyawans = $query->latest()->paginate(20);
+        $karyawans = $query->latest()->paginate(20)->withQueryString();
         $jabatans = Jabatan::all();
 
         return view('karyawan.index', compact('karyawans', 'jabatans'));

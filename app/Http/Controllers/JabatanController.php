@@ -11,7 +11,7 @@ class JabatanController extends Controller
 {
     public function index()
     {
-        $jabatans = Jabatan::withCount('karyawans')->latest()->paginate(20);
+        $jabatans = Jabatan::withCount('karyawans')->latest()->paginate(20)->withQueryString();
         return view('jabatan.index', compact('jabatans'));
     }
 

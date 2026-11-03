@@ -26,8 +26,18 @@ class AbsensiController extends Controller
     {
         $query = Absensi::with(['karyawan', 'jabatan', 'lokasi', 'kandang', 'bibit']);
 
+        // if ($request->filled('karyawan_id')) {
+        //     $query->where('karyawan_id', $request->karyawan_id);
+        // }
         if ($request->filled('karyawan_id')) {
-            $query->where('karyawan_id', $request->karyawan_id);
+            $karyawan = Karyawan::find($request->karyawan_id);
+
+            if ($karyawan) {
+                $query->whereHas('karyawan', function ($q) use ($karyawan) {
+                    $q->where('nama', $karyawan->nama)
+                    ->where('jabatan_id', $karyawan->jabatan_id);
+                });
+            }
         }
 
         // Filter: Jabatan
@@ -78,8 +88,17 @@ class AbsensiController extends Controller
             });
         }
 
-        $absensis = $query->latest('tanggal')->paginate(20);
-        $karyawans = Karyawan::with('jabatan')->orderBy('nama')->get();
+        $absensis = $query->latest('tanggal')->paginate(20)->withQueryString();
+        // $karyawans = Karyawan::with('jabatan')->orderBy('nama')->get();
+        $karyawans = Karyawan::with('jabatan')
+            ->select('karyawans.*')
+            ->whereIn('id', function ($query) {
+                $query->selectRaw('MIN(id)')
+                    ->from('karyawans')
+                    ->groupBy('nama', 'jabatan_id');
+            })
+            ->orderBy('nama')
+            ->get();
         $jabatans = Jabatan::all();
         $lokasis = Lokasi::all();
         $kandangs = Kandang::with('bibit')->get();

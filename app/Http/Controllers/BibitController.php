@@ -48,7 +48,7 @@ class BibitController extends Controller
             $query->whereDate('tanggal_selesai', '<=', $request->tanggal_selesai_end);
         }
 
-        $bibits = $query->latest('tanggal_masuk')->paginate(20);
+        $bibits = $query->latest('tanggal_masuk')->paginate(20)->withQueryString();
         $jenisBibits = Bibit::query()
             ->select('jenis_bibit')
             ->distinct()

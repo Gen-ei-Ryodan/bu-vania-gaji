@@ -16,7 +16,7 @@ class AdminUserController extends Controller
             abort(403, 'Unauthorized access.');
         }
 
-        $admins = User::role('Admin')->orderBy('name')->paginate(20);
+        $admins = User::role('Admin')->orderBy('name')->paginate(20)->withQueryString();
 
         return view('admin_users.index', compact('admins'));
     }

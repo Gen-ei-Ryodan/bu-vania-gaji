@@ -11,7 +11,7 @@ class LokasiController extends Controller
 {
     public function index()
     {
-        $lokasis = Lokasi::withCount(['kandangs', 'bibits'])->latest()->paginate(20);
+        $lokasis = Lokasi::withCount(['kandangs', 'bibits'])->latest()->paginate(20)->withQueryString();
         return view('lokasi.index', compact('lokasis'));
     }
 
