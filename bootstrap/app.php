@@ -4,7 +4,6 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
-use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpKernel\Exception\HttpException;
 
@@ -25,12 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $handleTokenExpired = function ($e, Request $request) {
-            $is419 = ($e instanceof TokenMismatchException)
-                || ($e instanceof HttpException && $e->getStatusCode() === 419)
-                || ($e->getPrevious() instanceof TokenMismatchException);
-
-            if (! $is419) {
+        $exceptions->render(function (HttpException $e, Request $request) {
+            if ($e->getStatusCode() !== 419) {
                 return null;
             }
 
@@ -50,7 +45,5 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->route('login')->with('warning', $message);
-        };
-
-        $exceptions->render($handleTokenExpired);
+        });
     })->create();
