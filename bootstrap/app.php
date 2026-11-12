@@ -6,6 +6,7 @@ use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Http\Request;
 use Illuminate\Session\TokenMismatchException;
 use Illuminate\Support\Facades\Auth;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -24,7 +25,15 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->render(function (TokenMismatchException $e, Request $request) {
+        $handleTokenExpired = function ($e, Request $request) {
+            $is419 = ($e instanceof TokenMismatchException)
+                || ($e instanceof HttpException && $e->getStatusCode() === 419)
+                || ($e->getPrevious() instanceof TokenMismatchException);
+
+            if (! $is419) {
+                return null;
+            }
+
             $message = 'Sesi Anda telah berakhir karena tidak ada aktivitas. Silakan masuk kembali.';
 
             if ($request->expectsJson()) {
@@ -41,5 +50,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return redirect()->route('login')->with('warning', $message);
-        });
+        };
+
+        $exceptions->render($handleTokenExpired);
     })->create();
