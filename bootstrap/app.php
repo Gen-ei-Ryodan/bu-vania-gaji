@@ -42,8 +42,10 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
+                $request->session()->flash('warning', $message);
+                $request->session()->save();
             }
 
-            return redirect()->route('login')->with('warning', $message);
+            return redirect()->to(route('login', [], false))->with('warning', $message);
         });
     })->create();
